@@ -117,5 +117,8 @@ Potential future directions include:
 - **Integration with deep learning frameworks**: Connect with PyTorch or TensorFlow for tasks involving symbolic + numeric hybrid models.  
 
 
+## License
+This project is licensed under the MIT License – see the [LICENSE](./LICENSE) file for details.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
