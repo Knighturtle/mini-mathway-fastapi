@@ -1,7 +1,8 @@
-# mini-mathway-fastapi
+Mini Mathway FastAPI
 
-A **FastAPI + SymPy** project that provides a Mathway-like API.  
-You can simplify, factor, evaluate, solve equations, compute derivatives, integrals, limits, and perform matrix operations (RREF).
+A FastAPI-based math API inspired by Mathway.
+This project provides endpoints to simplify expressions, factorize polynomials, solve equations, compute derivatives, integrals, limits, and perform matrix operations using SymPy
+.
 
 - **Language**: Python 3.13  
 - **Main Libraries**: FastAPI, Uvicorn, SymPy, Pydantic  
