@@ -16,3 +16,9 @@ sympy==1.14.0
 typing-inspection==0.4.1
 typing_extensions==4.14.1
 uvicorn==0.35.0
+fastapi==0.116.1
+uvicorn==0.35.0
+sympy==1.14.0
+pydantic==2.11.7
+httpx==0.28.1
+pytest==8.3.3
