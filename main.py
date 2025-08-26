@@ -52,80 +52,66 @@ async def factor(request: Request):
     res = sp.factor(expr)
     return {"input": expr_s, "result": str(res)}
 
+# --- /evaluate ---------------------------------------------------------------
 @app.post("/evaluate")
 async def evaluate(request: Request):
     data = await request.json()
-    expr_s = data.get("expr")
-    values = data.get("values", {})
-    if not expr_s:
+    expr_str = data.get("expr")
+    if not expr_str:
         raise HTTPException(status_code=400, detail="Missing 'expr'")
-    expr = parse_math(expr_s)
-    res = expr.evalf(subs=values)
-    return {"input": expr_s, "result": str(res)}
 
+    # 変数辞書（expr 以外のキーを全部使う）
+    var_values = {k: v for k, v in data.items() if k != "expr"}
+
+    try:
+        expr = parse_expr(expr_str)
+        # 代入 → 数値化
+        subsd = expr.subs({sp.Symbol(k): v for k, v in var_values.items()})
+        # SymPy型をPythonの数値へ
+        res = sp.N(subsd)
+        # 可能なら int に（14.0 → 14）
+        if res.is_integer():
+            res = int(res)
+        else:
+            res = float(res)
+        return {"input": expr_str, "result": res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Evaluate failed: {e}")
+
+# --- /solve ------------------------------------------------------------------
 @app.post("/solve")
 async def solve(request: Request):
     data = await request.json()
-    expr_s = data.get("expr")
-    var_s = data.get("var", "x")
-    if not expr_s:
-        raise HTTPException(status_code=400, detail="Missing 'expr'")
-    expr = parse_math(expr_s)
-    var = sp.symbols(var_s)
-    roots = sp.solve(expr, var)
-    return {"input": expr_s, "solutions": [str(r) for r in roots]}
+    expr_str = data.get("expr")
+    var_name = data.get("var")
+    if not expr_str or not var_name:
+        raise HTTPException(status_code=400, detail="Missing 'expr' or 'var'")
 
-@app.post("/derivative")
-async def derivative(request: Request):
-    data = await request.json()
-    expr_s = data.get("expr")
-    var_s = data.get("var", "x")
-    order = int(data.get("order", 1))
-    if not expr_s:
-        raise HTTPException(status_code=400, detail="Missing 'expr'")
-    expr = parse_math(expr_s)
-    var = sp.symbols(var_s)
-    res = sp.diff(expr, var, order)
-    return {"input": expr_s, "var": var_s, "order": order, "result": str(res)}
+    try:
+        expr = parse_expr(expr_str)
+        var = sp.Symbol(var_name)
+        sols = sp.solve(expr, var)
+        # テストは文字列のリストを期待
+        return {"input": expr_str, "result": [str(s) for s in sols]}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Solve failed: {e}")
 
-@app.post("/integral")
-async def integral(request: Request):
-    data = await request.json()
-    expr_s = data.get("expr")
-    var_s = data.get("var", "x")
-    if not expr_s:
-        raise HTTPException(status_code=400, detail="Missing 'expr'")
-    expr = parse_math(expr_s)
-    var = sp.symbols(var_s)
-    res = sp.integrate(expr, var)
-    return {"input": expr_s, "result": str(res)}
-
-@app.post("/limit")
-async def limit(request: Request):
-    data = await request.json()
-    expr_s = data.get("expr")
-    var_s = data.get("var", "x")
-    point = data.get("point", 0)
-    if not expr_s:
-        raise HTTPException(status_code=400, detail="Missing 'expr'")
-    expr = parse_math(expr_s)
-    var = sp.symbols(var_s)
-    res = sp.limit(expr, var, point)
-    return {"input": expr_s, "result": str(res)}
-
+# --- /matrix/rref ------------------------------------------------------------
 @app.post("/matrix/rref")
 async def matrix_rref(request: Request):
     data = await request.json()
     mat = data.get("matrix")
     if not mat:
         raise HTTPException(status_code=400, detail="Missing 'matrix'")
+
     try:
         M = sp.Matrix(mat)
         rrefM, pivots = M.rref()
+        # 文字列にせず、そのままPythonのリストで返す
         return {
             "input": mat,
-            "rref": [list(map(int, row)) for row in rrefM.tolist()],
-            "pivots": list(map(int, pivots)),
+            "rref": rrefM.tolist(),
+            "pivots": list(pivots),
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"RREF failed: {e}")
