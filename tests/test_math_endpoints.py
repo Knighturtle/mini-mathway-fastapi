@@ -1,9 +1,11 @@
-# tests/test_math_endpoints.py
 import pytest
 
 @pytest.mark.asyncio
 async def test_simplify(client):
-    r = await client.post("/simplify", params={"expr": "2*x + 3*x"})
-    assert r.status_code == 200
-    assert r.json()["result"] == "5*x"
+    res = await client.post("/simplify", json={"expression": "2*x + 3*x"})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body.get("result") in ("5*x", "5*x")
+
+
 
